@@ -90,9 +90,11 @@ export const LinkFieldsSchema = z.object({
   unsafe: z.boolean().optional().describe('Show a warning page before redirecting.'),
   geo: GeoSchema.optional().describe('Geo-routing rules mapping a two-letter country code to a URL.'),
   tags: TagsSchema.describe('Up to 10 normalized link tags, each 1-32 characters.'),
+  listed: z.boolean().optional().describe('Opt in to the password-protected document directory. Does not restrict the short link.'),
 })
 
 export const CreateLinkSchema = LinkFieldsSchema.extend({
+  listed: z.boolean().default(false),
   id: IdSchema.default(nanoid(10)),
   slug: NewSlugSchema.default(nanoid()),
   createdAt: TimestampSchema.default(() => Math.floor(Date.now() / 1000)),

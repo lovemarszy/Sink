@@ -123,7 +123,11 @@
       "ai_og_generate": "KI-OpenGraph generieren",
       "duplicate_url_hint": "Diese URL existiert bereits als {shortLink}",
       "proxy_label": "Reverse-Proxy aktivieren",
-      "proxy_description": "Leitet Inhalte der Ziel-URL transparent weiter, ohne 301/302-Weiterleitung. Ideal für Abonnements und APIs. Kann nicht mit Link-Cloaking kombiniert werden."
+      "proxy_description": "Leitet Inhalte der Ziel-URL transparent weiter, ohne 301/302-Weiterleitung. Ideal für Abonnements und APIs. Kann nicht mit Link-Cloaking kombiniert werden.",
+      "directory_listed": "Im Verzeichnis anzeigen",
+      "directory_title": "Verzeichnistitel",
+      "directory_description_label": "Verzeichnisbeschreibung",
+      "directory_description": "Nur ausgewählte aktive Links erscheinen nach der Anmeldung. Das Ausblenden schützt die Kurz-URL nicht."
     },
     "dialogs": {
       "discard": {

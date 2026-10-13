@@ -43,6 +43,9 @@ async function writeThroughCache(event: H3Event, link: Link, effectiveExpiresAt?
 }
 
 export async function getLink(event: H3Event, slug: string, cacheTtl?: number): Promise<Link | null> {
+  // Small private directories can opt out of eventually consistent redirect reads.
+  if (useRuntimeConfig(event).authoritativeRedirects)
+    return await getAuthoritativeLink(event, slug)
   const cached = await readLegacyKvLink(event, slug, cacheTtl)
   if (cached.link)
     return cached.link

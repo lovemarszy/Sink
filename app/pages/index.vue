@@ -1,14 +1,14 @@
+<script setup lang="ts">
+// A full request reaches the server-rendered, password-protected directory.
+definePageMeta({ layout: false })
+onMounted(() => {
+  if (window.location.pathname === '/')
+    window.location.reload()
+})
+</script>
+
 <template>
-  <div
-    class="
-      flex flex-col justify-center overflow-x-clip bg-background text-foreground
-    "
-  >
-    <HomeHero />
-    <HomeLogos />
-    <HomeFeatures />
-    <HomeStats />
-    <HomeTestimonials />
-    <HomeCta />
-  </div>
+  <main>
+    <a href="/">Document Hub</a>
+  </main>
 </template>

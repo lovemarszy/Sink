@@ -16,6 +16,12 @@ export default defineNuxtConfig({
   css: ['@/assets/css/tailwind.css'],
   runtimeConfig: {
     siteToken: process.env.NUXT_SITE_TOKEN || randomBytes(32).toString('base64url'),
+    directoryPassword: '',
+    directoryTitle: '',
+    resourceGuardsEnabled: false,
+    disableAccessLog: false,
+    authoritativeRedirects: false,
+    requireHttps: false,
     cfAccessTeamDomain: '',
     cfAccessAud: '',
     redirectStatusCode: '301',
@@ -80,6 +86,7 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2026-07-13',
   nitro: {
+    prerender: { ignore: ['/'] },
     preset: import.meta.env.CF_PAGES !== '1' ? 'cloudflare-module' : undefined,
     experimental: {
       openAPI: true,

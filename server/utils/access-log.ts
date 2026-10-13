@@ -117,6 +117,8 @@ function getCountryName(country?: string): string {
 }
 
 export function collectAccessLog(event: H3Event): AccessLogResult | undefined {
+  if (useRuntimeConfig(event).disableAccessLog)
+    return
   const ip = getHeader(event, 'cf-connecting-ip') || getHeader(event, 'x-real-ip') || getRequestIP(event, { xForwardedFor: true })
 
   const { host: referer } = parseURL(getHeader(event, 'referer'))

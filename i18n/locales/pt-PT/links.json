@@ -123,7 +123,11 @@
       "ai_og_generate": "Gerar OpenGraph da IA",
       "duplicate_url_hint": "Este URL já existe como {shortLink}",
       "proxy_label": "Ativar proxy inverso",
-      "proxy_description": "Encaminha de forma transparente o conteúdo do URL de destino sem redirecionamento 301/302. Ideal para assinaturas e APIs. Não pode ser combinado com ocultação de link."
+      "proxy_description": "Encaminha de forma transparente o conteúdo do URL de destino sem redirecionamento 301/302. Ideal para assinaturas e APIs. Não pode ser combinado com ocultação de link.",
+      "directory_listed": "Mostrar no diretório",
+      "directory_title": "Título do diretório",
+      "directory_description_label": "Descrição do diretório",
+      "directory_description": "Só as ligações ativas selecionadas aparecem após iniciar sessão. Ocultar uma ligação não protege o URL curto."
     },
     "dialogs": {
       "discard": {

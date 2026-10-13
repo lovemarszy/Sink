@@ -362,10 +362,16 @@ describe('link store gate', () => {
 
     const runSpy = vi.spyOn(env.AI, 'run').mockRejectedValue(new Error('Workers AI unavailable'))
     const toMarkdownSpy = vi.spyOn(env.AI, 'toMarkdown').mockRejectedValue(new Error('Markdown conversion unavailable'))
-    const response = await fetchWithAuth(`/api/link/ai?url=${encodeURIComponent('https://example.com/gate-check')}`)
-    expect(response.status).toBe(200)
-    runSpy.mockRestore()
-    toMarkdownSpy.mockRestore()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network unavailable'))
+    try {
+      const response = await fetchWithAuth(`/api/link/ai?url=${encodeURIComponent('https://example.com/gate-check')}`)
+      expect(response.status).toBe(200)
+    }
+    finally {
+      runSpy.mockRestore()
+      toMarkdownSpy.mockRestore()
+      fetchSpy.mockRestore()
+    }
   })
 })
 

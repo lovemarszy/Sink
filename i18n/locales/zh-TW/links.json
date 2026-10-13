@@ -123,7 +123,11 @@
       "ai_og_generate": "生成 AI OpenGraph",
       "duplicate_url_hint": "此 URL 已存在為 {shortLink}",
       "proxy_label": "啟用反向代理",
-      "proxy_description": "直接透明代理轉發目標 URL 內容，不發生 301/302 重定向。適合訂閱或 API 請求。與連結偽裝互斥。"
+      "proxy_description": "直接透明代理轉發目標 URL 內容，不發生 301/302 重定向。適合訂閱或 API 請求。與連結偽裝互斥。",
+      "directory_listed": "在目錄中顯示",
+      "directory_title": "目錄標題",
+      "directory_description_label": "目錄描述",
+      "directory_description": "只有主動展示且有效的連結會在目錄登入後出現。隱藏目錄項目不會限制短連結存取。"
     },
     "dialogs": {
       "discard": {

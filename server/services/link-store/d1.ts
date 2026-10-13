@@ -90,6 +90,7 @@ function rowToLink(row: LinkRow): Link {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     tags: [],
+    listed: row.listed,
   }
   const optionalFields = [
     'comment',
@@ -154,6 +155,7 @@ export function buildD1LinkValues(event: H3Event, link: Link, effectiveExpiresAt
     proxy: link.proxy ?? null,
     password: link.password ?? null,
     unsafe: link.unsafe ?? null,
+    listed: link.listed ?? false,
     geo: link.geo ?? null,
     normalizedUrl: withoutQuery(link.url),
     effectiveExpiresAt: effectiveExpiresAt === undefined ? getExpiration(event, link.expiration) ?? null : effectiveExpiresAt,
