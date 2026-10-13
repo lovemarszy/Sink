@@ -1,9 +1,20 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { parseEnv } from 'node:util'
 
-const config = JSON.parse(await readFile(new URL('../wrangler.deploy.jsonc', import.meta.url), 'utf8'))
-assert.equal(config.name, 'loveur-document-hub')
-assert.equal(config.account_id, '404e1598aa3a9c767f80113cf5025c93')
+const root = new URL('../', import.meta.url)
+const envPath = new URL(process.env.DEPLOY_ENV_FILE || '.env.production', root)
+const env = { ...parseEnv(await readFile(envPath, 'utf8')), ...process.env }
+const configPath = process.argv[2] || new URL('wrangler.deploy.jsonc', root)
+const config = JSON.parse(await readFile(configPath, 'utf8'))
+assert.equal(env.DEPLOY_DOCUMENT_HUB, 'true')
+assert(env.DEPLOY_WORKER_NAME?.trim(), 'An explicit Worker name is required')
+assert.match(env.DEPLOY_ACCOUNT_ID || '', /^[\da-f]{32}$/i)
+assert.match(env.DEPLOY_D1_DATABASE_ID || '', /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i)
+assert.match(env.DEPLOY_KV_NAMESPACE_ID || '', /^[\da-f]{32}$/i)
+assert.equal(config.name, env.DEPLOY_WORKER_NAME.trim())
+assert.equal(config.account_id, env.DEPLOY_ACCOUNT_ID.trim())
+assert.equal(config.keep_vars, true)
 assert.equal(config.workers_dev, false)
 assert.equal(config.preview_urls, false)
 assert.equal(config.ai, undefined)
@@ -24,7 +35,13 @@ assert.equal(config.vars.NUXT_DIRECTORY_PASSWORD, undefined)
 assert.equal(config.vars.NUXT_REDIRECT_STATUS_CODE, '302')
 assert.equal(config.vars.NUXT_REDIRECT_NO_STORE, 'true')
 assert.equal(config.vars.NUXT_API_CORS, 'false')
-assert.equal(config.d1_databases[0].database_name, 'loveur-document-hub')
+assert.equal(config.d1_databases.length, 1)
+assert.equal(config.d1_databases[0].binding, 'DB')
+assert.equal(config.d1_databases[0].database_name, env.DEPLOY_D1_DATABASE_NAME?.trim() || 'sink')
+assert.equal(config.d1_databases[0].database_id, env.DEPLOY_D1_DATABASE_ID.trim())
+assert.equal(config.kv_namespaces.length, 1)
+assert.equal(config.kv_namespaces[0].binding, 'KV')
+assert.equal(config.kv_namespaces[0].id, env.DEPLOY_KV_NAMESPACE_ID.trim())
 assert.notEqual(config.d1_databases[0].database_id, 'ef964055-65bf-4b78-b109-ac9c9290ae62')
 assert.notEqual(config.kv_namespaces[0].id, 'ef93d42dc4b34969bab404d2e80f8dd3')
 assert.deepEqual(config.ratelimits.map(item => item.simple), [
@@ -32,5 +49,7 @@ assert.deepEqual(config.ratelimits.map(item => item.simple), [
   { limit: 10, period: 60 },
   { limit: 600, period: 60 },
 ])
-assert(config.routes.every(route => route.custom_domain && route.pattern === 'go.loveur.life'))
+assert.deepEqual(config.routes, env.DEPLOY_CUSTOM_DOMAIN?.trim()
+  ? [{ pattern: env.DEPLOY_CUSTOM_DOMAIN.trim(), custom_domain: true }]
+  : [])
 console.log('Document Hub production binding and resource checks passed.')

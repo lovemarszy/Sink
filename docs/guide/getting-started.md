@@ -5,6 +5,10 @@ description: Prepare Cloudflare resources, deploy Sink, and create your first sh
 
 # Getting Started
 
+::: info Document Hub fork
+This repository includes a password-protected directory and a minimal deployment profile. Start with the [Document Hub guide](/guide/document-hub) and the repository's `DOCUMENT_HUB.md`. The steps below describe inherited full-feature Sink setup, including optional services that the minimal profile disables.
+:::
+
 Sink is a self-hosted short-link app with visit analytics. It runs on Cloudflare (no VPS required).
 
 ## 1. Fork Sink
