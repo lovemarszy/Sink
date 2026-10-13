@@ -11,5 +11,8 @@ export default defineAppConfig({
   slugRegex: /^[a-z0-9]+(?:-[a-z0-9]+)*$/i,
   reserveSlug: [
     'dashboard',
+    'api',
+    'hub-login',
+    'hub-logout',
   ],
 })

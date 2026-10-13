@@ -123,7 +123,11 @@
       "ai_og_generate": "Genera OpenGraph AI",
       "duplicate_url_hint": "Questo URL esiste già come {shortLink}",
       "proxy_label": "Abilita Reverse Proxy",
-      "proxy_description": "Inoltra in modo trasparente il contenuto dell'URL di destinazione senza reindirizzamento 301/302. Ideale per abbonamenti e API. Non può essere combinato con il mascheramento link."
+      "proxy_description": "Inoltra in modo trasparente il contenuto dell'URL di destinazione senza reindirizzamento 301/302. Ideale per abbonamenti e API. Non può essere combinato con il mascheramento link.",
+      "directory_listed": "Mostra nella directory",
+      "directory_title": "Titolo della directory",
+      "directory_description_label": "Descrizione della directory",
+      "directory_description": "Solo i link attivi selezionati appaiono dopo l’accesso. Nascondere un link non protegge il suo URL breve."
     },
     "dialogs": {
       "discard": {

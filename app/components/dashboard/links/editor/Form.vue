@@ -365,12 +365,56 @@ defineExpose({ initializeRandomSlug })
           />
         </form.Field>
 
+        <form.Field v-slot="{ field }" name="title">
+          <Field>
+            <div class="flex items-center justify-between">
+              <FieldLabel :for="`${formId}-${field.name}`">
+                {{ $t('links.form.directory_title') }}
+              </FieldLabel>
+            </div>
+            <Input
+              :id="`${formId}-${field.name}`"
+              :name="field.name"
+              :model-value="field.state.value"
+              :placeholder="$t('links.form.og_title_placeholder')"
+              autocomplete="off"
+              @blur="field.handleBlur"
+              @input="field.handleChange(($event.target as HTMLInputElement).value)"
+            />
+          </Field>
+        </form.Field>
+
+        <form.Field v-slot="{ field }" name="description">
+          <DashboardLinksEditorFieldTextarea
+            :field="field"
+            :input-id="`${formId}-${field.name}`"
+            :label="$t('links.form.directory_description_label')"
+            :placeholder="$t('links.form.og_description_placeholder')"
+          />
+        </form.Field>
+
         <form.Field v-slot="{ field }" name="tags">
           <DashboardLinksEditorTagsInput
             ref="tagsInput"
             :model-value="field.state.value"
             @update:model-value="field.handleChange"
           />
+        </form.Field>
+
+        <form.Field v-slot="{ field }" name="listed">
+          <Field>
+            <div class="flex items-center justify-between gap-4">
+              <FieldLabel :for="`${formId}-listed`">
+                {{ $t('links.form.directory_listed') }}
+              </FieldLabel>
+              <Switch
+                :id="`${formId}-listed`"
+                :model-value="field.state.value ?? false"
+                @update:model-value="field.handleChange"
+              />
+            </div>
+            <FieldDescription>{{ $t('links.form.directory_description') }}</FieldDescription>
+          </Field>
         </form.Field>
       </FieldGroup>
 

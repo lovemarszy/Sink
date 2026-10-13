@@ -123,7 +123,11 @@
       "ai_og_generate": "Buat OpenGraph AI",
       "duplicate_url_hint": "URL ini sudah ada sebagai {shortLink}",
       "proxy_label": "Aktifkan Reverse Proxy",
-      "proxy_description": "Meneruskan konten dari URL tujuan secara transparan tanpa pengalihan 301/302. Ideal untuk langganan konfigurasi dan API. Tidak dapat digabungkan dengan cloaking tautan."
+      "proxy_description": "Meneruskan konten dari URL tujuan secara transparan tanpa pengalihan 301/302. Ideal untuk langganan konfigurasi dan API. Tidak dapat digabungkan dengan cloaking tautan.",
+      "directory_listed": "Tampilkan di direktori",
+      "directory_title": "Judul direktori",
+      "directory_description_label": "Deskripsi direktori",
+      "directory_description": "Hanya tautan aktif yang dipilih muncul setelah masuk. Menyembunyikan tautan tidak melindungi URL pendeknya."
     },
     "dialogs": {
       "discard": {

@@ -226,53 +226,25 @@ async function aiOg() {
       </AccordionTrigger>
       <AccordionContent class="px-1">
         <FieldGroup>
-          <props.form.Field v-slot="{ field }" name="title">
-            <Field>
-              <div class="flex items-center justify-between">
-                <FieldLabel :for="`${idPrefix}-${field.name}`">
-                  {{ $t('links.form.og_title') }}
-                </FieldLabel>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  :aria-label="$t('links.form.ai_og_generate')"
-                  :disabled="aiOgPending"
-                  @click="aiOg"
-                >
-                  <Sparkles
-                    aria-hidden="true"
-                    class="size-4"
-                    :class="{ 'motion-safe:animate-bounce': aiOgPending }"
-                  />
-                </Button>
-              </div>
-              <Input
-                :id="`${idPrefix}-${field.name}`"
-                :name="field.name"
-                :model-value="field.state.value"
-                :placeholder="$t('links.form.og_title_placeholder')"
-                autocomplete="off"
-                @blur="field.handleBlur"
-                @input="field.handleChange(($event.target as HTMLInputElement).value)"
-              />
-            </Field>
-          </props.form.Field>
-
-          <props.form.Field v-slot="{ field }" name="description">
-            <DashboardLinksEditorFieldTextarea
-              :field="field"
-              :input-id="`${idPrefix}-${field.name}`"
-              :label="$t('links.form.og_description')"
-              :placeholder="$t('links.form.og_description_placeholder')"
-            />
-          </props.form.Field>
-
           <props.form.Field v-slot="{ field }" name="image">
             <Field>
               <FieldLabel :for="`${idPrefix}-${field.name}`">
                 {{ $t('links.form.og_image') }}
               </FieldLabel>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                :aria-label="$t('links.form.ai_og_generate')"
+                :disabled="aiOgPending"
+                @click="aiOg"
+              >
+                <Sparkles
+                  aria-hidden="true"
+                  class="size-4"
+                  :class="{ 'motion-safe:animate-bounce': aiOgPending }"
+                />
+              </Button>
               <DashboardLinksEditorImageUploader
                 :model-value="field.state.value"
                 :slug="currentSlug"

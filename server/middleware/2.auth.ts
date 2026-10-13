@@ -4,6 +4,12 @@ export default eventHandler(async (event) => {
   if (!event.path.startsWith('/api/'))
     return
 
+  // This exact read route uses an independent directory session, never admin auth.
+  if (getRequestURL(event).pathname === '/api/hub/directory' && event.method === 'GET') {
+    await requireDirectorySession(event)
+    return
+  }
+
   const token = getHeader(event, 'Authorization')?.replace(/^Bearer\s+/, '')
   if (await verifySiteToken(token, useRuntimeConfig(event).siteToken)) {
     event.context.authMethod = 'site-token'

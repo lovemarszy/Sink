@@ -43,6 +43,13 @@
       "when": 1789995773114,
       "tag": "0005_tan_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791890645119,
+      "tag": "0006_pale_hitman",
+      "breakpoints": true
     }
   ]
 }

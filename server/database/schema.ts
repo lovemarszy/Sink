@@ -20,6 +20,7 @@ export const links = sqliteTable('links', {
   proxy: integer({ mode: 'boolean' }),
   password: text(),
   unsafe: integer({ mode: 'boolean' }),
+  listed: integer({ mode: 'boolean' }).notNull().default(false),
   geo: text({ mode: 'json' }).$type<Link['geo']>(),
   normalizedUrl: text('normalized_url').notNull(),
   effectiveExpiresAt: integer('effective_expires_at'),
@@ -33,6 +34,18 @@ export const links = sqliteTable('links', {
 export const tags = sqliteTable('tags', {
   name: text().primaryKey(),
 })
+
+export const directorySessions = sqliteTable('directory_sessions', {
+  tokenHash: text('token_hash').primaryKey(),
+  passwordVersion: text('password_version').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+}, table => [index('directory_sessions_expires_at_idx').on(table.expiresAt)])
+
+export const directoryLoginAttempts = sqliteTable('directory_login_attempts', {
+  key: text().primaryKey(),
+  attempts: integer().notNull().default(0),
+  expiresAt: integer('expires_at').notNull(),
+}, table => [index('directory_login_attempts_expires_at_idx').on(table.expiresAt)])
 
 export const linkTags = sqliteTable('link_tags', {
   linkSlug: text('link_slug').notNull().references(() => links.slug, { onDelete: 'cascade' }),
