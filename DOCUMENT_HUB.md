@@ -1,41 +1,49 @@
-# Document Hub for loveur.life
+# Document Hub operations guide
 
-This fork keeps Sink's administration and redirects, and replaces the marketing homepage with a password-protected resource directory. The intended hostname is `go.loveur.life`; no production resources or DNS changes are made by local development.
+This guide describes the document-directory fork of Sink. All addresses and resource names below are examples or values supplied by the deployer. No production URLs, account IDs, deployment history, or passwords belong in this document.
 
-## Access model
+## Architecture and boundaries
 
-- `/`: a native HTML password form, then the directory after authentication.
-- `/hub-login`: same-origin POST only; creates a separate directory session.
-- `/hub-logout`: same-origin POST only; revokes the session in D1.
-- `GET /api/hub/directory`: requires a valid directory session. It returns only title, description, slug, and tags for explicitly listed eligible links.
-- `/<slug>`: existing public short-link behavior, including existing link passwords and warnings. Directory login is not required.
-- Management APIs: retain Sink's Site Token and verified Cloudflare Access authentication. A directory cookie never grants management rights.
+The homepage is server-rendered by `server/middleware/1a.directory.ts`. Login, browsing, search, tag filters, link opening, and manual URL copying do not require JavaScript or a third-party login provider. Browser language selects Chinese or English; `NUXT_DIRECTORY_TITLE` optionally overrides the directory title. The administration panel requires JavaScript and keeps Sink's eleven synchronized interface locales.
 
-The directory password is shared. Anyone receiving it can browse the same directory; individual invitation, attribution, and revocation are not implemented. Change the shared password to invalidate all existing directory sessions. Original document permissions remain independent.
+| Route | Behavior |
+| --- | --- |
+| `/` | Password form, then the directory for authenticated visitors |
+| `/index.html` | Redirects to the protected homepage |
+| `POST /hub-login` | Same-origin form login |
+| `POST /hub-logout` | Same-origin logout and session revocation |
+| `GET /api/hub/directory` | Directory-session authentication; metadata only |
+| `/dashboard/login` | Standalone management-key login |
+| Other `/api/**` routes | Sink management authentication; directory cookies are insufficient |
+| `/<slug>` | Public short-link resolution with that link's own controls |
 
-Sessions use random 256-bit opaque tokens. D1 stores only their SHA-256 digests, an expiry, and a password version bound to the management secret. Cookies are HttpOnly, SameSite=Strict, Secure over HTTPS, and have no persistent lifetime. The server enforces a 15-minute expiry and logout revokes the stored session. Shared computers should still use the explicit logout button, since some browsers restore session cookies.
+D1 is the authoritative store; route link writes through the existing link-store utilities. The minimal production profile reads redirects directly from D1 so changes, deletions, and added link passwords take effect without waiting for KV propagation. KV remains bound for existing Sink functionality and migrations.
 
-Login is limited to 10 attempts per IP per 15-minute window using atomic D1 increments. Cloudflare supplies the client IP in production. School users sharing an IP can share the limit; successful logins clear the current counter.
+`listed` defaults to false. Directory queries include only explicitly listed links that are not password-protected, unsafe, or expired. Responses contain only slug, title, description, and tags, with private/no-store headers. At most 500 eligible records are loaded, then metadata search and tag filtering are applied. This is not document-content search or file hosting.
 
-## Implementation choices
+## Authentication
 
-The homepage is deliberately server-rendered through `server/middleware/1a.directory.ts`. It avoids a frontend framework, external fonts, third-party login, or JavaScript requirement for login, browsing, search, tag filtering, and opening links. A small optional script provides clipboard copying; the complete short URL is also selectable without JavaScript.
+Directory sessions are independent random 256-bit tokens. D1 stores their SHA-256 digests, fixed 900-second expiry, and a version bound to both the directory password and management key. Cookies are HttpOnly, SameSite=Strict, and Secure over HTTPS. Reads do not extend the deadline; logout revokes the stored session. Changing either secret invalidates existing directory sessions.
 
-The server chooses a complete Chinese or English interface from the browser language. `NUXT_DIRECTORY_TITLE` can override the title without exposing secrets. The Sink dashboard retains its synchronized locale files. Titles and descriptions are now available in the basic link form; they continue to serve existing link previews too.
+`NUXT_DIRECTORY_PASSWORD` must have at least ten characters; prefer a longer random value. It is shared with approved directory viewers. There are no individual accounts, invitation lists, or per-person revocation. Destination document permissions remain independent.
 
-`links.listed` defaults to false for all existing and new records. Edits that omit it preserve the current flag. Old imports without the flag remain unlisted. Password-protected, unsafe, and expired links are excluded even when listed. Sink currently has no separate disabled field; deletion removes a link from D1.
+The management key (`NUXT_SITE_TOKEN`) is private to the owner. Its browser copy lives in the current tab's sessionStorage for fifteen minutes; legacy localStorage copies are cleared. This browser deadline does **not** expire or rotate the underlying management API key. Cloudflare Access management authentication remains supported by upstream, but is not required by the minimal profile.
 
-Directory queries project an allowlist in SQL, exclude noneligible links before querying tags, and return at most 500 items. Search matches title, description, slug, and tags after trimming, Unicode normalization, and case folding. Tag filters combine with search. Results use a stable title/slug order. All directory HTML and API responses are private/no-store, so management updates appear on the next reload. The directory does not index document contents or cache a second copy of link data.
+Production secrets belong in Cloudflare's encrypted Worker secrets, not in Git, build variables, public configuration, screenshots, or local plaintext delivery files. Development-only credentials may live in ignored `.env`; production operation does not require local password files.
 
-`wrangler.jsonc` runs the Worker before static assets for the root, static index alias, login/logout, and API paths. Root prerendering is disabled. `/index.html` redirects through the protected root. Other prerendered pages contain no directory records. Client navigation back to `/` reloads the native page.
+## Local development
 
-## Local setup and checks
-
-Use Node.js 24+ and pnpm 11.11.0 as declared by upstream. Keep development credentials in ignored `.env`; never reuse development/test passwords in production.
+Use Node.js 24+ and pnpm 11.11.0. Install dependencies, copy `.env.example` to `.env`, and set test-only secrets. The general example retains upstream options; production uses the dedicated template described below.
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm db:migrate:local
+pnpm dev
+```
+
+For Worker verification:
+
+```sh
 pnpm lint
 pnpm types:check
 pnpm locales:check
@@ -44,70 +52,113 @@ pnpm test --run
 pnpm exec wrangler dev --local --port 8787
 ```
 
-Tests execute the fresh `.output/server/index.mjs` and apply committed migrations to local simulated D1. Remote bindings are disabled in Vitest; failure-path AI tests mock network failure rather than waiting for external websites.
+Tests apply committed migrations to simulated local D1 and disable remote bindings. Build before Worker tests to avoid testing stale server output. Complete the first-run KV-to-D1 initialization in the dashboard even when both stores are empty; otherwise link writes return HTTP 423.
 
-After local D1 setup, complete Sink's first-run KV-to-D1 migration in the existing dashboard, even for an empty installation. This enables link writes.
+## Minimal Workers deployment
 
-## Production checklist (requires explicit deployment authorization)
+### 1. Prepare isolated resources
 
-1. Use the fork `https://github.com/lovemarszy/Sink`; review and merge the document-hub changes first. Preserve upstream license notices and make the deployed source available under AGPL-3.0-only.
-2. Verify the Cloudflare account and the `loveur.life` zone. Verify that `go.loveur.life` is unused before adding the custom Worker domain. Select a new, unused Worker name (suggested `loveur-document-hub`) in the deployment configuration; never overwrite an existing Worker named `sink` by using the upstream default.
-3. Create project-specific D1 and KV resources. Configure `DEPLOY_D1_DATABASE_ID`, `DEPLOY_D1_DATABASE_NAME`, and `DEPLOY_KV_NAMESPACE_ID`. Existing configuration can generate `wrangler.deploy.jsonc`; do not deploy upstream placeholder IDs.
-4. Keep optional R2 backups and AI/analytics services within the selected account's available features. Do not add paid resources without approval. If R2 is omitted, set `NUXT_DISABLE_AUTO_BACKUP=true` and arrange backups separately.
-5. Set `NUXT_SITE_TOKEN` as a strong, private encrypted management secret and `NUXT_DIRECTORY_PASSWORD` as an independent encrypted secret of at least 10 characters. Prefer a longer random directory password. Keep these out of Git, browser bundles, logs, and public responses. Set secrets before enabling the public custom domain.
-6. Set `NUXT_PUBLIC_PREVIEW_MODE` to empty, leave `NUXT_PUBLIC_HOME_URL` and legacy `NUXT_HOME_URL` empty, and keep API CORS disabled unless specifically needed.
-7. Recommend `NUXT_REDIRECT_STATUS_CODE=302` and `NUXT_REDIRECT_NO_STORE=true` for mutable document destinations. These are configuration recommendations; core redirect defaults and middleware are preserved.
-8. Back up any existing database before running remote migrations. The new generated migration is `drizzle/0006_pale_hitman.sql`; it adds a default-false listing column and independent session/rate-limit tables without deleting existing links. `drizzle/0007_deep_mindworm.sql` adds a visibility/title/slug index to avoid scanning unlisted records.
-9. After approval and backup, use the existing `pnpm deploy:config` and `pnpm db:migrate:remote` commands with verified project bindings. Build fresh, then use `pnpm deploy:worker`. Note that the deploy command itself runs remote migrations first. Ordinary verification must never run these commands.
-10. Enable HTTPS and attach `go.loveur.life` as the custom Worker domain. The application's directory authentication also protects alternate Worker hostnames. Do not place whole-site Cloudflare Access in front of it, since direct short links intentionally remain public. Optional management-only Access must use owner identities, not directory viewers.
-11. Complete the existing first-run link-store setup and verify the acceptance checks below.
+Confirm the account's **Workers Free** plan independently of the domain zone's Free Website plan. Choose a dedicated, unused Worker name and create project-specific D1 and KV resources. Do not overwrite another Worker or deploy upstream placeholder resource IDs.
 
-For rollback, retain the previous Worker version and a D1 backup/export. Roll back code with Cloudflare's deployment controls; leave additive tables/columns in place unless a separately reviewed restoration is needed. If rolling back to upstream's marketing homepage, do not treat that page as a private directory. Additive schema rollback must never delete existing links or link tags.
+```sh
+pnpm exec wrangler login
+pnpm exec wrangler d1 create document-hub-db
+pnpm exec wrangler kv namespace create KV
+cp .env.document-hub.example .env.production
+```
 
-## Manual acceptance checks
+Fill `.env.production` with the actual account ID, Worker name, D1 database name/ID, and KV namespace ID. Keep `DEPLOY_CUSTOM_DOMAIN` empty for the first upload. The template has no passwords and is ignored after copying.
 
-- In a new browser session, `/` displays only a password form. Anonymous directory API requests return 401; no link titles or tags are exposed.
-- Incorrect passwords and foreign-origin submissions fail. Repeated attempts are limited. Successful login shows the directory without giving access to management APIs.
-- Create a link without opting in: the short URL works, but the directory omits it.
-- Set title, description, tags, and Show in directory: the item appears on reload. Search in Chinese/English, combine a tag filter, and clear an empty result.
-- Open uses `/<slug>`. Copy/select yields the full short URL. Change the destination and confirm the same slug redirects to the new target.
-- Clear Show in directory: the item disappears, while direct access still works. Add a link password, mark unsafe, expire, or delete a link: it is excluded from the directory.
-- Logout, then replay the old cookie: directory API access is rejected. Rotate the directory password: old sessions are rejected.
-- On a school browser, test with JavaScript disabled; login, search, filters, opening, and manual copying still work. Network/domain blocking and very old browser behavior require testing on the actual school computer.
+### 2. Generate and verify configuration
 
-## Source touchpoints
+```sh
+DEPLOY_ENV_FILE=.env.production pnpm deploy:config
+DEPLOY_ENV_FILE=.env.production node scripts/check-document-hub-config.mjs
+pnpm build
+```
 
-- Data: `server/database/schema.ts`, generated `drizzle/0006_pale_hitman.sql` and metadata, `shared/schemas/link.ts`, `server/services/link-store/d1.ts`.
-- Directory: `server/services/directory.ts`, `shared/utils/directory.ts`, `server/utils/directory-auth.ts`, `server/utils/directory-html.ts`, `server/middleware/1a.directory.ts`, `server/routes/hub-login.post.ts`, `server/routes/hub-logout.post.ts`, `server/api/hub/directory.get.ts`.
-- Authentication boundary: the exact GET exception in `server/middleware/2.auth.ts` validates only the independent directory session.
-- UI: `app/pages/index.vue`, the existing link form/advanced fields and form payload utility, locale additions in all 11 `links.json` files.
-- Routing/config: `app/app.config.ts`, `nuxt.config.ts`, `wrangler.jsonc`, `.env.example`, regenerated `worker-configuration.d.ts`.
-- Validation: `tests/api/directory.spec.ts`, existing form defaults and AI fallback tests, `vitest.config.ts`. Vue is explicitly declared at its already-used version so pnpm unit tests can resolve it. A pre-existing implicit-any callback in `Heatmap.vue` is annotated with its existing accepted `unknown` parameter type to restore typecheck.
+The checker compares the generated bindings with the chosen deployment inputs and verifies the minimal resource policy. Keep `DEPLOY_ENV_FILE=.env.production` on subsequent deployment commands; otherwise the scripts may read development `.env` instead.
 
-## Verified results
+### 3. Apply migrations and upload without a public domain
 
-Local build, ESLint, Nuxt typecheck, locale contract checks, and diff whitespace checks passed. All 36 test files and 401 tests passed, including directory sessions, resource guards, browser credential expiry, HTTPS, and authoritative redirects. Native browser verification covered login, search, clipboard copying, logout, and the 390-pixel mobile layout. The build retains upstream CSS-transform and sourcemap warnings; it completed successfully. School network access and the actual school browser have not been tested. Production setup is authorized by the owner; deployment verification is recorded separately below.
+Back up existing data before migrations. New installations use the committed migrations, including `0006_pale_hitman.sql` (listing/session/login-attempt tables) and `0007_deep_mindworm.sql` (directory visibility index).
 
-## Production resource protection
+```sh
+DEPLOY_ENV_FILE=.env.production pnpm deploy:worker
+```
 
-The owner confirmed Workers Free for the Marszy account on 2026-10-13. The existing OAuth authorization cannot read billing subscriptions; this confirmation must not be confused with the zone’s separate Free Website plan. Do not upgrade the Workers plan without a fresh cost review. Free Workers, D1, and KV stop accepting operations after their account quotas are exceeded; native rate limit bindings themselves are only approximate per-location guards, not a spending cap. Account quotas are shared with other Workers. Traffic exhaustion can temporarily affect availability, including other projects on the account.
+This command runs remote D1 migrations before uploading. It is a production mutation, not a validation command. The first configuration has no custom-domain route, workers.dev endpoint, or preview URL.
 
-Set `DEPLOY_DOCUMENT_HUB=true`, `DEPLOY_WORKER_NAME=loveur-document-hub`, and `DEPLOY_ACCOUNT_ID` in an ignored `.env.production`. Use `DEPLOY_ENV_FILE=.env.production pnpm deploy:config`, then `node scripts/check-document-hub-config.mjs` before publishing. The generated profile has only project-specific D1/KV, static assets, and native rate limiters. It removes AI, Analytics Engine, R2, cron jobs, public workers.dev, and preview URLs. Reverse proxying and analytics collection are disabled, so public redirects do not download target documents, write click records, or run user-agent analytics. Logs sample 1% and disable invocation logging; built-in request metrics remain available. No automatic deploy integration or background monitor is configured.
+### 4. Install independent encrypted secrets
 
-`server/middleware/0.resource-guard.ts` executes before redirect resolution. It rejects excess traffic before D1/KV calls: 120 requests/minute per client IP, 10 login requests/minute per IP, and 600 requests/minute per Cloudflare location across this Worker. Shared school IPs can share these thresholds. The original atomic D1 limit of 10 login attempts per 15-minute window remains as a second layer. Missing or failed native bindings return 503 instead of silently allowing database work. Login bodies are streamed with a hard 4096-byte limit, even without Content-Length. Directory session deadlines are fixed at 900 seconds and are not extended by reads.
+Run the following commands interactively and enter the values at the secret prompts. Never put real values in command arguments, shell history, or committed files.
 
-The dashboard no longer saves its management key in localStorage. Its browser copy lives in sessionStorage in the current tab, with a fixed 15-minute deadline; legacy persistent copies are cleared. The long-lived management API secret itself remains valid until rotated, as required by Sink’s existing authentication model. Directory login still does not confer management rights.
+```sh
+pnpm exec wrangler secret put NUXT_SITE_TOKEN --config wrangler.deploy.jsonc --env-file .env.production
+pnpm exec wrangler secret put NUXT_DIRECTORY_PASSWORD --config wrangler.deploy.jsonc --env-file .env.production
+```
 
-First upload a Worker with no route and workers.dev disabled. Install the two encrypted secrets through stdin, then attach only `go.loveur.life`. Never upload credential files, echo their values, or place them in deployment vars. User credential output files have owner-only filesystem permissions and should be kept separate: only the directory password is intended for approved visitors.
+Use a strong random management key and a different directory password. A persistent directory title can be added separately as `NUXT_DIRECTORY_TITLE` in Worker runtime configuration; it is not a password.
 
-For this minimal profile, `NUXT_AUTHORITATIVE_REDIRECTS=true` reads active links directly from D1 rather than KV. A live test showed KV could return the previous destination immediately after an edit. The opt-in D1 path makes edits, deletions, expiry, and newly added passwords effective on the next redirect request; upstream KV behavior remains the default for other installations. D1 reads increase modestly, while redirect-triggered cache refill writes are avoided.
+### 5. Attach the chosen hostname
 
-`NUXT_REQUIRE_HTTPS=true` upgrades HTTP to HTTPS before rendering any login form and sends HSTS for this hostname only. It does not change the zone’s other websites or SSL settings.
+Set `DEPLOY_CUSTOM_DOMAIN` to your chosen hostname in `.env.production`, regenerate and check the configuration, then deploy again with the same explicit `DEPLOY_ENV_FILE`. Confirm the hostname is unused before binding it. Do not add whole-site Cloudflare Access: public short links intentionally remain accessible without directory login.
 
-## Deployment record
+Open `/dashboard/login`, sign in, and complete the first-run storage initialization. Create links and explicitly enable **Show in directory** for eligible resources.
 
-Deployed to `https://go.loveur.life` on 2026-10-13 under the owner’s explicit authorization. Worker: `loveur-document-hub`. D1: `loveur-document-hub`; dedicated KV namespace. Version: `f257e24f-4818-473d-b381-8660bc25786b`. Both encrypted secret names were verified without exposing their values. Live configuration checks confirmed only D1/KV/assets/rate-limit bindings, disabled workers.dev/previews, no cron schedules, no AI/Analytics Engine/R2, enabled resource guards, and sampled logs.
+## Resource policy and costs
 
-All 36 test files and 401 tests passed; lint, typecheck, locale checks, build, and production configuration checks passed. Live HTTPS probes verified anonymous directory rejection, rejection of development credentials, management authentication, empty-store initialization, Secure/HttpOnly/SameSite cookies, default-unlisted creation, metadata redaction, immediate target changes, visitor write rejection, foreign-origin rejection, and logout revocation. Temporary probe links were deleted. HTTP upgrades to HTTPS and HSTS were verified. Native browser verification confirmed directory login, the 15-minute notice, management login, and a fresh management tab requiring reauthentication. A homepage reload conflict discovered during browser verification was fixed before final deployment. The actual school browser/network still needs testing.
+The minimal profile removes Workers AI, Analytics Engine, R2, cron jobs, workers.dev, and public preview URLs. It disables reverse proxying, click-log collection, automatic backups, API CORS, and demo mode. Redirects use 302 with no-store. Logs sample 1% with invocation logs and traces disabled. No automatic deployment integration or monitor is installed by this profile.
 
-The production directory is empty and ready for owner-managed resources. R2/cron backups are intentionally disabled; use Sink’s authenticated export when needed and consult Cloudflare D1 recovery controls. The management API key remains long-lived until rotated; its browser session copy expires after 15 minutes.
+HTTPS is required, with HSTS scoped to the deployed hostname. Native limits execute before D1/KV work; missing or failed rate-limit bindings fail closed with HTTP 503.
+
+| Protection | Threshold |
+| --- | --- |
+| Requests per IP, per Cloudflare location | 120 per minute |
+| Directory login requests per IP, per Cloudflare location | 10 per minute |
+| Aggregate Worker requests per Cloudflare location | 600 per minute |
+| Atomic D1 directory login attempts per IP | 10 per 15-minute window |
+| Login form body | 4096 bytes, including streamed bodies |
+
+Successful directory login clears that IP's current D1 attempt counter. School networks can share public IPs, so unrelated users may share these limits. Cloudflare's native counters are approximate and local to a location; they are **not** a global accounting system or spending cap. See the [rate-limit binding documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+
+Free quotas can be exhausted, causing request or storage operations to fail; account-level allowances may also serve other projects. The application does not guarantee availability during an attack or prevent charges from unrelated account services. Review the current [Workers](https://developers.cloudflare.com/workers/platform/pricing/), [D1](https://developers.cloudflare.com/d1/platform/pricing/), and [KV](https://developers.cloudflare.com/kv/platform/pricing/) terms before enabling paid plans or add-ons.
+
+## Routine maintenance
+
+- **Manage links:** change metadata, destinations, tags, and listing status through the dashboard. Reload the directory to see changes. Keep one short code when changing a document's destination.
+- **Backup:** use **Import/Export → Links export** and keep the JSON privately. Exports contain link information and password-related fields, but do not replace a full database backup or include Worker secrets. R2 snapshots and cron backups are disabled in the minimal profile. Review D1 recovery controls for database-level recovery.
+- **Rotate directory password:** run `wrangler secret put NUXT_DIRECTORY_PASSWORD` with the same config/env-file arguments above. Once the update propagates, test a new login and confirm old passwords and sessions fail. No local plaintext password file is needed.
+- **Rotate management key:** update `NUXT_SITE_TOKEN` as an encrypted secret. Old API clients and browser copies will be rejected; existing directory sessions are also invalidated.
+- **Upgrade:** review upstream changes, preserve this fork's directory/authentication/resource policy, run checks against a fresh build, export data, then deploy using the intended configuration. Add schema changes through generated Drizzle migrations.
+- **Rollback:** retain a prior Worker version and a database backup/export. Cloudflare deployment rollback changes code, not the D1 schema. Keep additive tables and columns unless a separately reviewed data restoration is required. Restoring an old secret or code version may affect authentication; recheck access after rollback.
+
+## Acceptance and troubleshooting
+
+| Check or symptom | Expected behavior or next step |
+| --- | --- |
+| Anonymous homepage | Password form only; no resource titles or tags |
+| Anonymous directory API | HTTP 401 |
+| Missing or too-short directory secret | HTTP 503; set the encrypted secret |
+| Incorrect password | HTTP 401 without granting a session |
+| Repeated or burst requests | HTTP 429; wait before retrying |
+| Protection unavailable | HTTP 503; inspect all three rate-limit bindings |
+| Link writes return 423 | Complete first-run storage initialization |
+| Link missing from directory | Check listed status, link password, unsafe flag, expiry, and the 500-item bound |
+| Visitor attempts a management write | Rejected; directory cookies are not management keys |
+| Target edited or link deleted | Next redirect reflects authoritative D1 state in the minimal profile |
+| Logout or secret rotation | Previous directory session is rejected |
+| School browser | Verify native directory with JavaScript disabled on the actual device/network; the administration panel still needs JavaScript |
+
+Network/domain blocking cannot be solved by the password form. Avoid adding fallback public endpoints that bypass the intended access policy.
+
+## Source map
+
+- Directory: `server/services/directory.ts`, `shared/utils/directory.ts`, `server/utils/directory-auth.ts`, `server/utils/directory-html.ts`, `server/middleware/1a.directory.ts`, login/logout routes, and `server/api/hub/directory.get.ts`.
+- Permission boundary and resources: `server/middleware/2.auth.ts`, `server/middleware/0.resource-guard.ts`, `app/utils/auth-token.ts`.
+- Administration: `app/pages/dashboard/login.vue`, the existing link forms, and synchronized locale files.
+- Data: `server/database/schema.ts`, `shared/schemas/link.ts`, link-store services, and generated `drizzle/` migrations.
+- Deployment: `scripts/cloudflare-deploy-config.mjs`, `scripts/check-document-hub-config.mjs`, `wrangler.jsonc`, and `.env.document-hub.example`.
+- Verification: directory API tests, resource-guard tests, token tests, and existing redirect/link tests. Actual school browser/network compatibility requires separate hands-on testing.
+
+Retain upstream license notices and make corresponding deployed source available under AGPL-3.0-only. Deployment addresses, account identities, version IDs, and operational credentials should stay outside public documentation.

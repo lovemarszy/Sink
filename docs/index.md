@@ -1,16 +1,16 @@
 ---
 layout: home
-title: Sink Documentation
-description: A Simple, Speedy, Secure, and Serverless Link Shortener with Analytics, Running Entirely on Cloudflare.
+title: Document Hub Documentation
+description: A password-protected document directory with separate administration and public short links.
 
 hero:
-  name: Sink
-  text: Simple / Speedy / Secure
-  tagline: A Simple, Speedy, Secure, and Serverless Link Shortener with Analytics, Running Entirely on Cloudflare.
+  name: Document Hub
+  text: Private directory, simple access
+  tagline: A password-protected document directory built on Sink, with independent administration and public short links.
   actions:
     - theme: brand
-      text: Get Started
-      link: /guide/getting-started
+      text: Document Hub Guide
+      link: /guide/document-hub
     - theme: alt
       text: Explore Features
       link: /features/links
@@ -21,11 +21,14 @@ hero:
 features:
   - title: Runs on Cloudflare
     icon: ☁️
-    details: Deploy to Workers or Pages. You need a database (D1) and a fast cache (KV); analytics, file storage, and AI are optional.
+    details: The minimal Workers profile uses D1, KV, and native request limits. AI, analytics collection, R2, and scheduled backups are disabled.
+  - title: Private directory
+    icon: 🔐
+    details: Use a shared password to browse listed resources, search metadata, and filter tags. Directory sessions expire after fifteen minutes.
   - title: Link management
     icon: 🔗
     details: Add expiration, passwords, warnings, tags, and device or country routing when you need them.
-  - title: Visit analytics
-    icon: 📊
-    details: See reports, logs, filters, and a near-realtime view in the dashboard.
+  - title: Independent administration
+    icon: 🔑
+    details: Manage resources with a separate private key. Directory viewers cannot manage links; direct short URLs retain their own controls.
 ---

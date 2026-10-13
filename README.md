@@ -1,186 +1,85 @@
-# ⚡ Sink
+# Document Hub
 
-**A Simple, Speedy, Secure, and Serverless Link Shortener with Analytics, Running Entirely on Cloudflare.**
+A self-hosted document directory built on [Sink](https://github.com/miantiao-me/Sink). Approved visitors enter a shared password to browse the directory; the owner manages links through a separate administration panel.
 
-[Website](https://sink.cool) · [Documentation](https://docs.sink.cool) · [API Reference](https://sink.cool/_docs/scalar)
+The application runs on Cloudflare Workers with D1 and Workers KV. It stores links and metadata, rather than uploading or hosting the destination documents. No deployment URL or production credentials are included in this repository.
 
-<a href="https://trendshift.io/repositories/20331" target="_blank">
-  <img
-    src="https://trendshift.io/api/badge/repositories/20331"
-    alt="miantiao-me/Sink | Trendshift"
-    width="250"
-    height="55"
-  />
-</a>
-<a href="https://news.ycombinator.com/item?id=40843683" target="_blank">
-  <img
-    src="https://hackernews-badge.vercel.app/api?id=40843683"
-    alt="Featured on Hacker News"
-    width="250"
-    height="55"
-  />
-</a>
-<a href="https://hellogithub.com/repository/57771fd91d1542c7a470959b677a9944" target="_blank">
-  <img
-    src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=57771fd91d1542c7a470959b677a9944&claim_uid=qi74Zp23wYKeAVB&theme=neutral"
-    alt="Featured｜HelloGitHub"
-    width="250"
-    height="55"
-  />
-</a>
-<a href="https://www.uneed.best/tool/sink" target="_blank">
-  <img
-    src="https://www.uneed.best/POTW1.png"
-    alt="Uneed Badge"
-    width="250"
-    height="55"
-  />
-</a>
+## Features
 
-[<img src="https://devin.ai/assets/deepwiki-badge.png" alt="DeepWiki" height="20"/>](https://deepwiki.com/miantiao-me/Sink)
-![Cloudflare](https://img.shields.io/badge/Cloudflare-F69652?style=flat&logo=cloudflare&logoColor=white)
-![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?style=flat&logo=nuxtdotjs&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
-![shadcn/ui](https://img.shields.io/badge/shadcn/ui-000000?style=flat&logo=shadcnui&logoColor=white)
-![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=flat)
+- A password-protected homepage with fixed 15-minute directory sessions.
+- A native HTML directory: login, search, tag filtering, opening links, and manual copying work without JavaScript. Clipboard copying is an optional enhancement.
+- Titles, descriptions, tags, and an explicit **Show in directory** option. New links are unlisted by default.
+- Public short URLs with editable destinations. Hiding a link from the directory does not disable its short URL.
+- A separate, minimal administration login with eleven interface languages, theme switching, and no promotional header or footer.
+- Existing Sink link management, expiry controls, link passwords, and JSON import/export.
+- A minimal deployment profile with HTTPS, request limits, and no AI, Analytics Engine, R2, scheduled backups, or public preview hostnames.
 
-![Hero](./public/image.png)
+## Access and privacy
 
----
+| Entry | Access | Lifetime |
+| --- | --- | --- |
+| `/` and `GET /api/hub/directory` | Shared directory password | Server-enforced 15 minutes |
+| `/dashboard/login` and management APIs | Independent management key (`NUXT_SITE_TOKEN`) | Browser copy expires after 15 minutes; the API key remains valid until rotated |
+| `/<slug>` | Public, subject to that link's own password, warning, or expiry | Controlled by the link settings |
 
-## ✨ Features
+Directory access never grants management permissions. Directory responses expose only titles, descriptions, slugs, and tags. Password-protected, unsafe, and expired links are excluded even if marked as listed.
 
-- **🔗 URL Shortening:** Compress your URLs to their minimal length.
-- **📈 Analytics:** Monitor link analytics and gather insightful statistics.
-- **☁️ Serverless:** Deploy without the need for traditional servers.
-- **🎨 Customizable Slug:** Support personalized slugs, UTM parameters, and optional case-sensitive slug matching through configuration.
-- **🪄 AI Assistance:** Optionally use Cloudflare Workers AI to generate slugs and OpenGraph metadata from page content.
-- **⏰ Link Control:** Set expirations, passwords, and unsafe-link warning pages.
-- **📱 Smart Routing:** Redirect visitors by device or country.
-- **🖼️ Social Preview:** Customize social previews with titles, descriptions, and images.
-- **📊 Near-real-time Analytics:** Display a live 3D globe and event logs using 10-second analytics polling and client-side replay, not SSE or WebSocket.
-- **🔲 QR Code:** Generate QR codes for your short links.
-- **📦 Import/Export:** Transfer links via JSON and export access analytics via CSV.
-- **🌍 Multi-language:** Full i18n support for dashboard and redirect pages.
+This is a shared-password directory, without individual accounts or invitations. Changing the directory password invalidates existing directory sessions. Document providers retain their own access permissions; protect confidential files at the destination as well.
 
-> [!TIP]
-> **Who is Sink for?**
->
-> Sink focuses on **individuals and small teams** who want a simple, self-hosted shortener on Cloudflare.
->
-> For professional / business needs (managed service, multi-user, SLA, and more), use **[S.EE](https://sink.cool/see)**.
+## Using the directory
 
-## 🪧 Demo
+1. Open `/dashboard/login` and enter the management key.
+2. Complete the first-run storage initialization, including for a new empty installation.
+3. Create a link with its destination, short code, title, description, and optional tags.
+4. Enable **Show in directory** when the link should appear on the homepage.
+5. Share the directory password with approved visitors; keep the management key private.
 
-Experience the demo at [Sink.Cool](https://sink.cool/dashboard). Log in using the Site Token below:
+Changes appear when visitors reload the directory. The directory is limited to 500 eligible links and searches their metadata, not the contents of documents. Use logout on shared computers.
 
-```txt
-Site Token: SinkCool
-```
+## Development
 
-<details>
-  <summary><b>Screenshots</b></summary>
-  <img alt="Analytics" src="./docs/images/sink.cool_dashboard.png"/>
-  <img alt="Links" src="./docs/images/sink.cool_dashboard_links.png"/>
-  <img alt="Link Analytics" src="./docs/images/sink.cool_dashboard_link_slug.png"/>
-</details>
-
-## 🔀 Sibling versions
-
-Sink and [Slite](https://github.com/miantiao-me/Slite) are sibling versions of the same link-management and analytics project. Sink runs on Cloudflare's serverless platform, while Slite runs as a local Node.js 24+/Docker process. They keep features, API contracts, and file organization compatible with each other wherever practical. Neither version is a legacy branch, and Slite is not a fork replacement for Sink.
-
-## 🧱 Technologies Used
-
-- **Framework**: [Nuxt 4](https://nuxt.com/)
-- **Database**: [Cloudflare D1](https://developers.cloudflare.com/d1/) is the authoritative link store; [Workers KV](https://developers.cloudflare.com/kv/) is a write-through read cache
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **Analytics Engine**: [Cloudflare Workers Analytics Engine](https://developers.cloudflare.com/analytics/)
-- **Object Storage**: [Cloudflare R2](https://developers.cloudflare.com/r2/) for optional logical JSON snapshots
-- **AI**: Optional [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)
-- **UI Components**: [shadcn-vue](https://www.shadcn-vue.com/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Deployment**: [Cloudflare](https://www.cloudflare.com/)
-
-## 🚗 Roadmap [WIP]
-
-We welcome your contributions and PRs.
-
-- [x] Browser Extension - [Sink Tool](https://github.com/zhuzhuyule/sink-extension)
-- [x] Chrome Extension - [Sink Quick Shorten](https://chromewebstore.google.com/detail/sink-quick-shorten/emlojomjpenjgkaphajcokijobpkejih)
-- [x] Raycast Extension - [Raycast-Sink](https://github.com/foru17/raycast-sink)
-- [x] Apple Shortcuts - [Sink Shortcuts](https://s.search1api.com/sink001)
-- [x] iOS App - [Sink](https://apps.apple.com/app/id6745417598)
-- [x] Enhanced Link Management (with Cloudflare D1)
-- [x] Analytics Enhancements (Multi-link filtering)
-- [x] Dashboard Performance Optimization (Infinite loading)
-- [x] API, migration, backup, and redirect tests
-
-## 🏗️ Deployment
-
-> Video tutorial: [Watch here](https://www.youtube.com/watch?v=MkU23U2VE9E)
-
-We currently support deployment to [Cloudflare Workers](https://docs.sink.cool/deployment/workers) (recommended) and [Cloudflare Pages](https://docs.sink.cool/deployment/pages) (deprecated).
-
-## ⚒️ Configuration
-
-[Configuration Docs](https://docs.sink.cool/configuration/)
-
-## 🔌 API
-
-[API Docs](https://docs.sink.cool/api/) · [Live Scalar Reference for the public demo instance](https://sink.cool/_docs/scalar)
-
-## 🤖 AI Skills
-
-Install Sink AI Skills for enhanced coding assistance:
-
-```bash
-npx skills add miantiao-me/sink
-```
-
-## 🧰 MCP
-
-Sink serves a built-in MCP endpoint at `POST /api/mcp`, using the official `@modelcontextprotocol/server` SDK v2, serving modern clients over the per-request transport and 2025-era clients over a stateless fallback with JSON responses.
-
-> Replace the domain below with your own instance, and use the `NUXT_SITE_TOKEN` from your instance's environment variables as the bearer token.
+Requires Node.js 24+ and **pnpm 11.11.0**.
 
 ```sh
-claude mcp add --transport http sink https://sink.cool/api/mcp --header "Authorization: Bearer SinkCool"
+pnpm install --frozen-lockfile
+cp .env.example .env
 ```
 
-Any client that supports an HTTP transport with custom headers can connect the same way:
+Set development-only `NUXT_SITE_TOKEN` and `NUXT_DIRECTORY_PASSWORD` values in ignored `.env`. The directory password must contain at least ten characters; prefer a longer random value for production. Do not reuse production secrets for development or tests.
 
-```json
-{
-  "mcpServers": {
-    "sink": {
-      "type": "http",
-      "url": "https://sink.cool/api/mcp",
-      "headers": {
-        "Authorization": "Bearer SinkCool"
-      }
-    }
-  }
-}
+```sh
+pnpm db:migrate:local
+pnpm dev
 ```
 
-It exposes tools for managing links (list, search, read, count, tag, create, update, upsert, delete) and for reading analytics (counters, views over time, and top values per dimension). See the [integrations documentation](https://docs.sink.cool/integrations/) for the full list.
+The Nuxt development server uses port 7465. For a local Worker preview, build first and run `pnpm exec wrangler dev --local --port 8787`. Finish the existing KV-to-D1 initialization before creating links.
 
-## 🙋🏻 FAQs
+## Deployment and maintenance
 
-[FAQs](https://docs.sink.cool/faqs)
+Use the [Document Hub operations guide](DOCUMENT_HUB.md) for the minimal Workers profile, secret setup, database migrations, custom domains, password rotation, backups, and rollback.
 
-## 💖 Credits
+Copy [.env.document-hub.example](.env.document-hub.example) to an ignored `.env.production` and fill in your own account and resource IDs. The example contains no real deployment address or passwords. Deploy with the generated `wrangler.deploy.jsonc`, rather than the upstream development configuration.
 
-1. [**Cloudflare**](https://www.cloudflare.com/)
-2. [**NuxtHub**](https://hub.nuxt.com/)
-3. [**Astroship**](https://astroship.web3templates.com/)
-4. [**Tailark**](https://tailark.com/)
+The minimal profile is intended for a Workers Free account. Free quotas can be exhausted and availability can be interrupted; request limits are not a financial spending cap. Review Cloudflare's current [Workers](https://developers.cloudflare.com/workers/platform/pricing/), [D1](https://developers.cloudflare.com/d1/platform/pricing/), and [KV](https://developers.cloudflare.com/kv/platform/pricing/) plans before deployment or any upgrade. A zone's Free Website plan does not establish the Workers account plan.
 
-## 📄 License
+Automatic R2 backups are disabled in this profile. Periodically export links through **Import/Export** and keep the export privately. Optional upstream analytics, AI, proxying, and R2 features require separate configuration and resource review.
 
-[AGPL-3.0-only](LICENSE) © [miantiao-me](https://github.com/miantiao-me)
+## Verification
 
-## ☕ Sponsor
+```sh
+pnpm lint
+pnpm types:check
+pnpm locales:check
+pnpm build
+pnpm test --run
+```
 
-1. [Follow Me on X (Twitter)](https://404.li/x).
-2. [Become a sponsor on GitHub](https://github.com/sponsors/miantiao-me).
+Worker tests execute the built server, so rebuild after server changes. Tests use simulated local storage with remote bindings disabled. See [AGENTS.md](AGENTS.md) for repository constraints and [DESIGN.md](DESIGN.md) for interface guidance.
+
+The [documentation tree](docs/) also contains inherited Sink reference material. Its full-feature deployment instructions differ from this fork's minimal profile; start with `DOCUMENT_HUB.md` for this project.
+
+Run `pnpm build:docs` to validate the documentation site. If publishing it separately, set `DOCS_SITE_URL` to its actual base URL for canonical links and a sitemap; leave it unset while the documentation has no public address.
+
+## Attribution and license
+
+Based on [Sink by miantiao-me](https://github.com/miantiao-me/Sink). Original license and copyright notices are retained. This fork is licensed under [AGPL-3.0-only](LICENSE); provide the corresponding source to users of a deployed modified version as required by the license.

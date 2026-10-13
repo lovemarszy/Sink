@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
 
-const siteUrl = 'https://docs.sink.cool'
+const siteUrl = process.env.DOCS_SITE_URL?.replace(/\/+$/, '') || ''
 const socialLinks = [
   { icon: 'github' as const, link: 'https://github.com/miantiao-me/Sink', ariaLabel: 'Sink on GitHub' },
 ]
@@ -19,16 +19,15 @@ function routeFromRelativePath(relativePath: string): string {
 }
 
 export default defineConfig({
-  title: 'Sink Documentation',
-  description: 'A Simple, Speedy, Secure, and Serverless Link Shortener with Analytics, Running Entirely on Cloudflare.',
+  title: 'Document Hub Documentation',
+  description: 'A password-protected document directory with independent administration and public short links.',
   cleanUrls: true,
   lastUpdated: true,
-  sitemap: {
-    hostname: siteUrl,
-  },
-  head: [
-    ['link', { rel: 'icon', href: 'https://sink.cool/favicon.ico', sizes: 'any' }],
-  ],
+  sitemap: siteUrl
+    ? {
+        hostname: siteUrl,
+      }
+    : undefined,
   locales: {
     'root': {
       label: 'English',
@@ -41,12 +40,13 @@ export default defineConfig({
           { text: 'Operations', link: '/features/import-export' },
           { text: 'Integrations', link: '/integrations/' },
           { text: 'API', link: '/api/' },
-          { text: 'Website', link: 'https://sink.cool' },
+          { text: 'Upstream Sink', link: 'https://sink.cool' },
         ],
         sidebar: {
           '/': [
             { text: 'Introduction', link: '/' },
             { text: 'Guide', items: [
+              { text: 'Document Hub', link: '/guide/document-hub' },
               { text: 'Getting Started', link: '/guide/getting-started' },
               { text: 'Architecture', link: '/guide/architecture' },
             ] },
@@ -79,10 +79,6 @@ export default defineConfig({
             ] },
           ],
         },
-        editLink: {
-          pattern: 'https://github.com/miantiao-me/Sink/edit/master/docs/:path',
-          text: 'Edit this page on GitHub',
-        },
         socialLinks,
       },
     },
@@ -90,8 +86,8 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-CN',
       link: '/zh-CN/',
-      title: 'Sink 文档',
-      description: '简洁、快速、安全、无服务器的短链接与访问分析应用，完全运行在 Cloudflare 上。',
+      title: 'Document Hub',
+      description: 'A password-protected document directory with independent administration and public short links.',
       themeConfig: {
         nav: [
           { text: '指南', link: '/zh-CN/guide/getting-started' },
@@ -106,6 +102,7 @@ export default defineConfig({
           '/zh-CN/': [
             { text: '简介', link: '/zh-CN/' },
             { text: '指南', items: [
+              { text: 'Document Hub', link: '/zh-CN/guide/document-hub' },
               { text: '快速开始', link: '/zh-CN/guide/getting-started' },
               { text: '架构', link: '/zh-CN/guide/architecture' },
             ] },
@@ -137,10 +134,6 @@ export default defineConfig({
               { text: '故障排除', link: '/zh-CN/faqs' },
             ] },
           ],
-        },
-        editLink: {
-          pattern: 'https://github.com/miantiao-me/Sink/edit/master/docs/:path',
-          text: '在 GitHub 上编辑此页',
         },
         lastUpdated: { text: '最后更新于' },
         outline: { label: '页面导航' },
@@ -184,28 +177,30 @@ export default defineConfig({
     const pageTitle = pageData.frontmatter.title
     const title = pageData.frontmatter.layout === 'home'
       ? pageTitle
-      : `${pageTitle} | ${isChinese ? 'Sink 文档' : 'Sink Documentation'}`
+      : `${pageTitle} | Document Hub Documentation`
     const description = pageData.frontmatter.description
     const locale = isChinese ? 'zh_CN' : 'en_US'
 
     pageData.frontmatter.head = [
       ...(pageData.frontmatter.head ?? []),
-      ['link', { rel: 'canonical', href: canonical }],
-      ['link', { rel: 'alternate', hreflang: 'en-US', href: `${siteUrl}${englishPath}` }],
-      ['link', { rel: 'alternate', hreflang: 'zh-CN', href: `${siteUrl}${chinesePath}` }],
-      ['link', { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}${englishPath}` }],
+      ...(siteUrl
+        ? [
+            ['link', { rel: 'canonical', href: canonical }],
+            ['link', { rel: 'alternate', hreflang: 'en-US', href: `${siteUrl}${englishPath}` }],
+            ['link', { rel: 'alternate', hreflang: 'zh-CN', href: `${siteUrl}${chinesePath}` }],
+            ['link', { rel: 'alternate', hreflang: 'x-default', href: `${siteUrl}${englishPath}` }],
+            ['meta', { property: 'og:url', content: canonical }],
+          ] as typeof pageData.frontmatter.head
+        : []),
       ['meta', { name: 'description', content: description }],
       ['meta', { property: 'og:title', content: title }],
       ['meta', { property: 'og:description', content: description }],
-      ['meta', { property: 'og:url', content: canonical }],
       ['meta', { property: 'og:type', content: 'website' }],
-      ['meta', { property: 'og:image', content: 'https://sink.cool/banner.png' }],
       ['meta', { property: 'og:locale', content: locale }],
       ['meta', { property: 'og:locale:alternate', content: isChinese ? 'en_US' : 'zh_CN' }],
-      ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:card', content: 'summary' }],
       ['meta', { name: 'twitter:title', content: title }],
       ['meta', { name: 'twitter:description', content: description }],
-      ['meta', { name: 'twitter:image', content: 'https://sink.cool/banner.png' }],
     ]
   },
 })
