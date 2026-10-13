@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // A full request reaches the server-rendered, password-protected directory.
 definePageMeta({ layout: false })
-onMounted(() => window.location.reload())
+onMounted(() => {
+  if (window.location.pathname === '/')
+    window.location.reload()
+})
 </script>
 
 <template>
