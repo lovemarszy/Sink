@@ -13,6 +13,11 @@
     "nodejs_compat"
   ],
   "keep_vars": true,
+  "ratelimits": [
+    { "name": "REQUEST_RATE_LIMITER", "namespace_id": "151020261", "simple": { "limit": 120, "period": 60 } },
+    { "name": "LOGIN_RATE_LIMITER", "namespace_id": "151020262", "simple": { "limit": 10, "period": 60 } },
+    { "name": "GLOBAL_RATE_LIMITER", "namespace_id": "151020263", "simple": { "limit": 600, "period": 60 } }
+  ],
   "upload_source_maps": true,
   "observability": {
     "logs": {

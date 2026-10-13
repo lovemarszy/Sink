@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { directoryLoginAttempts, directorySessions, links } from '../../server/database/schema'
-import { DIRECTORY_COOKIE } from '../../server/utils/directory-auth'
+import { DIRECTORY_COOKIE, DIRECTORY_SESSION_SECONDS } from '../../server/utils/directory-auth'
 import { db, deleteStoredLinks, fetch, getD1Link, postJson, putJson, setLinkStoreD1Mode } from '../utils'
 
 const password = 'local-test-directory-password'
@@ -94,6 +94,36 @@ describe('directory identity boundary', () => {
     const cookie = await session()
     expect((await fetch('/hub-logout', { method: 'POST', headers: { Cookie: cookie, Origin: 'https://evil.example' } })).status).toBe(403)
     expect((await fetch('/api/hub/directory', { headers: { Cookie: cookie } })).status).toBe(200)
+  })
+
+  it('expires after a fixed 15 minutes without extending on reads', async () => {
+    const before = Math.floor(Date.now() / 1000)
+    const cookie = await session()
+    const after = Math.floor(Date.now() / 1000)
+    const [stored] = await db.select().from(directorySessions)
+    expect(DIRECTORY_SESSION_SECONDS).toBe(900)
+    expect(stored!.expiresAt).toBeGreaterThanOrEqual(before + 900)
+    expect(stored!.expiresAt).toBeLessThanOrEqual(after + 900)
+    expect((await fetch('/api/hub/directory', { headers: { Cookie: cookie } })).status).toBe(200)
+    const [unchanged] = await db.select().from(directorySessions)
+    expect(unchanged!.expiresAt).toBe(stored!.expiresAt)
+  })
+
+  it('rejects oversized streamed login bodies even without Content-Length', async () => {
+    const response = await fetch('/hub-login', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'Origin': 'http://localhost', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(`password=${'a'.repeat(2000)}`))
+          controller.enqueue(new TextEncoder().encode('a'.repeat(2200)))
+          controller.close()
+        },
+      }),
+    })
+    expect(response.status).toBe(413)
+    expect(await db.select().from(directoryLoginAttempts)).toHaveLength(0)
   })
 
   it('revokes a session on logout, including replay of its old cookie', async () => {

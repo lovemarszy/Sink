@@ -1,0 +1,1 @@
+CREATE INDEX `links_directory_title_slug_idx` ON `links` (`listed`,`title`,`slug`);

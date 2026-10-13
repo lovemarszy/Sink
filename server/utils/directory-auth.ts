@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { directoryLoginAttempts, directorySessions } from '../database/schema'
 
 export const DIRECTORY_COOKIE = 'sink_directory_session'
-const SESSION_SECONDS = 2 * 60 * 60
+export const DIRECTORY_SESSION_SECONDS = 15 * 60
 const LOGIN_WINDOW_SECONDS = 15 * 60
 const LOGIN_LIMIT = 10
 
@@ -93,7 +93,7 @@ export async function logInToDirectory(event: H3Event, input: string): Promise<b
     await db.insert(directorySessions).values({
       tokenHash: await digest(token),
       passwordVersion: await passwordVersion(event),
-      expiresAt: now + SESSION_SECONDS,
+      expiresAt: now + DIRECTORY_SESSION_SECONDS,
     })
     await db.delete(directoryLoginAttempts).where(eq(directoryLoginAttempts.key, key))
     setCookie(event, DIRECTORY_COOKIE, token, {
