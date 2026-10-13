@@ -142,7 +142,20 @@ describe('directory identity boundary', () => {
     expect((await fetch('/api/hub/directory', { headers: { Cookie: cookie } })).status).toBe(401)
   })
 
-  it.each(['', 'short', false])('fails closed when the directory password is invalid: %s', async (value) => {
+  it('accepts a ten-character directory password and rejects the previous session', async () => {
+    const cookie = await session()
+    const replacement = 'testpass10'
+    runtimeEnv.NUXT_DIRECTORY_PASSWORD = replacement
+    expect((await fetch('/api/hub/directory', { headers: { Cookie: cookie } })).status).toBe(401)
+    expect((await login(password)).status).toBe(401)
+    const response = await login(replacement)
+    expect(response.status).toBe(303)
+    const newCookie = response.headers.get('set-cookie')?.split(';')[0]
+    expect(newCookie).toBeDefined()
+    expect((await fetch('/api/hub/directory', { headers: { Cookie: newCookie! } })).status).toBe(200)
+  })
+
+  it.each(['', 'short', '123456789', false])('fails closed when the directory password is invalid: %s', async (value) => {
     runtimeEnv.NUXT_DIRECTORY_PASSWORD = value
     expect((await fetch('/')).status).toBe(503)
     expect((await fetch('/api/hub/directory')).status).toBe(503)
