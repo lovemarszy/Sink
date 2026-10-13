@@ -51,7 +51,7 @@ After local D1 setup, complete Sink's first-run KV-to-D1 migration in the existi
 ## Production checklist (requires explicit deployment authorization)
 
 1. Use the fork `https://github.com/lovemarszy/Sink`; review and merge the document-hub changes first. Preserve upstream license notices and make the deployed source available under AGPL-3.0-only.
-2. Verify the Cloudflare account and the `loveur.life` zone. Verify that `go.loveur.life` is unused before adding the custom Worker domain.
+2. Verify the Cloudflare account and the `loveur.life` zone. Verify that `go.loveur.life` is unused before adding the custom Worker domain. Select a new, unused Worker name (suggested `loveur-document-hub`) in the deployment configuration; never overwrite an existing Worker named `sink` by using the upstream default.
 3. Create project-specific D1 and KV resources. Configure `DEPLOY_D1_DATABASE_ID`, `DEPLOY_D1_DATABASE_NAME`, and `DEPLOY_KV_NAMESPACE_ID`. Existing configuration can generate `wrangler.deploy.jsonc`; do not deploy upstream placeholder IDs.
 4. Keep optional R2 backups and AI/analytics services within the selected account's available features. Do not add paid resources without approval. If R2 is omitted, set `NUXT_DISABLE_AUTO_BACKUP=true` and arrange backups separately.
 5. Set `NUXT_SITE_TOKEN` as a strong, private encrypted management secret and `NUXT_DIRECTORY_PASSWORD` as an independent encrypted secret of at least 12 characters. Keep these out of Git, browser bundles, logs, and public responses. Set secrets before enabling the public custom domain.
