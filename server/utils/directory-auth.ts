@@ -16,7 +16,7 @@ async function digest(value: string): Promise<string> {
 
 function directoryPassword(event: H3Event): string {
   const password = useRuntimeConfig(event).directoryPassword
-  if (typeof password !== 'string' || password.length < 12)
+  if (typeof password !== 'string' || password.length < 10)
     throw createError({ status: 503, statusText: 'Directory access is not configured' })
   return password
 }
